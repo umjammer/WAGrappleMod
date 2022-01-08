@@ -6,7 +6,7 @@ import java.util.List;
 
 import icu.azim.wagrapple.util.Util;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
@@ -29,7 +29,7 @@ public class GrappleLineHandler {
 		this.line = line;
 	}
 	
-	public void updateFromCompound(CompoundTag tag) {
+	public void updateFromCompound(NbtCompound tag) {
 		this.setMaxLen(tag.getDouble("maxLen"));
 		int pieces = tag.getInt("pieces");
 		this.pieces.clear();
@@ -96,7 +96,7 @@ public class GrappleLineHandler {
 		//System.out.println(dir.toString()+" "+dir.getVector().toString()+" "+result);
 		return result;
 	}
-	
+
 	private void recalcLen() {
 		piecesLen = 0;
 		for(int i = 0; i < pieces.size()-1;i++) {
@@ -113,9 +113,9 @@ public class GrappleLineHandler {
 		double y = Math.abs(point.y-(int)point.y);
 		double z = Math.abs(point.z-(int)point.z);
 		
-		double cx = Util.getClosest(shape.x1,shape.x2,x)==1?shape.x1:shape.x2; //get the closest corner
-		double cy = Util.getClosest(shape.y1,shape.y2,y)==1?shape.y1:shape.y2;
-		double cz = Util.getClosest(shape.z1,shape.z2,z)==1?shape.z1:shape.z2;
+		double cx = Util.getClosest(shape.minX,shape.maxX,x)==1?shape.minX:shape.maxX; //get the closest corner
+		double cy = Util.getClosest(shape.minY,shape.maxY,y)==1?shape.minY:shape.maxY;
+		double cz = Util.getClosest(shape.minZ,shape.maxZ,z)==1?shape.minZ:shape.maxZ;
 		
 		double dx = Math.abs(cx-x); //get the distance between the point and closest corner
 		double dy = Math.abs(cy-y);
@@ -179,24 +179,6 @@ public class GrappleLineHandler {
 		}
 	}
 	
-	public boolean performCheck() {
-		BlockPos bpos = getPieceBlock(0);
-		Vec3d pos = getPiecePos(0);
-		if(line.world.isClient) {
-			Collection<Identifier> tags = MinecraftClient.getInstance().getNetworkHandler().getTagManager().blocks().getTagsFor(line.world.getBlockState(bpos).getBlock());
-			if(tags.contains(new Identifier("wagrapple","ungrappable"))) {
-				line.world.playSound(line.getPlayer(), pos.x, pos.y, pos.z, SoundEvents.ITEM_ARMOR_EQUIP_DIAMOND, SoundCategory.PLAYERS, 0.7F, 1.0F);
-				return false;
-			}
-			return true;
-		}else {
-			Collection<Identifier> tags = Util.getTagsFor(line.world.getBlockState(bpos).getBlock(), line.getServer().getTagManager().blocks().getEntries());
-			if(tags.contains(new Identifier("wagrapple","ungrappable"))) {
-				line.world.playSound(line.getPlayer(), pos.x, pos.y, pos.z, SoundEvents.ITEM_ARMOR_EQUIP_DIAMOND, SoundCategory.PLAYERS, 0.7F, 1.0F);
-				return false;
-			}
-			return true;
-		}
-	}
+
 
 }

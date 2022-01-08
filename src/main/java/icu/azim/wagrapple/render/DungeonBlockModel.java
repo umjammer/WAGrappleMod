@@ -30,8 +30,8 @@ import net.minecraft.world.BlockRenderView;
 
 public class DungeonBlockModel implements UnbakedModel{
 
-	public static SpriteIdentifier id = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEX, new Identifier("wagrapple","block/east_0_0_0"));
-	public static SpriteIdentifier glass = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEX, new Identifier("minecraft","block/glass"));
+	public static SpriteIdentifier id = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, new Identifier("wagrapple","block/east_0_0_0"));
+	public static SpriteIdentifier glass = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, new Identifier("minecraft","block/glass"));
 	private UnbakedModel original;
 	
 	public DungeonBlockModel(UnbakedModel m) {

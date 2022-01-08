@@ -24,10 +24,10 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Material;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentTarget;
+import net.minecraft.entity.EntityCategory;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -75,7 +75,7 @@ public class WAGrappleMod implements ModInitializer{
 				Registry.ENTITY_TYPE,
 				new Identifier(modid, "grapple_line"),
 				FabricEntityTypeBuilder.create(
-						SpawnGroup.MISC,
+						EntityCategory.MISC,
 						(EntityType.EntityFactory<GrappleLineEntity>) GrappleLineEntity::new)
 				.size(EntityDimensions.fixed(0.2F, 0.2F))
 				.build());
@@ -89,7 +89,7 @@ public class WAGrappleMod implements ModInitializer{
 		        Registry.ENCHANTMENT,
 			LINE_LENGTH_ENCHANTMENT_ID,
 			new RopeLengthEnchantment(
-			    Enchantment.Rarity.RARE,
+			    Enchantment.Weight.RARE,
 			    EnchantmentTarget.ALL,
 			    new EquipmentSlot[] {
 				EquipmentSlot.MAINHAND,
@@ -101,7 +101,7 @@ public class WAGrappleMod implements ModInitializer{
 		        Registry.ENCHANTMENT,
 			BOOST_POWER_ENCHANTMENT_ID,
 			new BoostPowerEnchantment(
-			    Enchantment.Rarity.RARE,
+			    Enchantment.Weight.RARE,
 			    EnchantmentTarget.ALL,
 			    new EquipmentSlot[] {
 				EquipmentSlot.MAINHAND,

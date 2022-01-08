@@ -13,15 +13,15 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.entity.EntityRenderer;
-import net.minecraft.client.util.math.Matrix4f;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3f;
 
 public class GrappleLineRenderer extends EntityRenderer<GrappleLineEntity> {
 	
@@ -47,8 +47,8 @@ public class GrappleLineRenderer extends EntityRenderer<GrappleLineEntity> {
 		if (playerEntity != null) {
 			matrixStack.push(); //cause when you rotate or translate, you mutate the matrix. but when you're done rendering, you need to restore the original state, so as to not mess up everything else that renders after you (c)UpcraftLP 
 			matrixStack.push();
-			matrixStack.multiply(this.renderManager.getRotation());
-			matrixStack.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(180.0F));
+			matrixStack.multiply(this.dispatcher.getRotation());
+			matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(180.0F));
 			matrixStack.pop();
 			int hand = playerEntity.getMainArm() == Arm.RIGHT ? 1 : -1; //get hand
 			boolean mainHandStack = true;
@@ -72,8 +72,8 @@ public class GrappleLineRenderer extends EntityRenderer<GrappleLineEntity> {
 			double fov;
 			double lwidth;
 			Vec3d vec3d = null;
-			if ((this.renderManager.gameOptions == null || this.renderManager.gameOptions.perspective <= 0) && playerEntity == MinecraftClient.getInstance().player) {
-				fov = this.renderManager.gameOptions.fov;
+			if ((this.dispatcher.gameOptions == null || this.dispatcher.gameOptions.perspective <= 0) && playerEntity == MinecraftClient.getInstance().player) {
+				fov = this.dispatcher.gameOptions.fov;
 				fov /= 100.0D;
 				vec3d = new Vec3d((double) hand * -0.37D * fov, -0.22D * fov, playerEntity.isSprinting()?0.28:0.35D); //offset to the hand
 				

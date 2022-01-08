@@ -15,8 +15,8 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -27,7 +27,7 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult.Type;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RayTraceContext;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 
 public class GrappleItem extends Item{
@@ -50,7 +50,7 @@ public class GrappleItem extends Item{
 		    Vec3d from = Util.getPlayerShoulder(player, ihand, 1);
 		    Vec3d to = player.getCameraPosVec(0).add(player.getRotationVec(0).multiply(WAGrappleMod.maxLength*lengthModifier));
 		    
-		    BlockHitResult result = player.world.rayTrace(new RayTraceContext(from, to, RayTraceContext.ShapeType.COLLIDER, RayTraceContext.FluidHandling.NONE, player));
+		    BlockHitResult result = player.world.raycast(new RaycastContext(from, to, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player));
 		    
 			if(result.getType()==Type.BLOCK) {
 				player.getItemCooldownManager().set(this, 16);
@@ -63,7 +63,7 @@ public class GrappleItem extends Item{
 					
 					GrappleLineEntity entity = new GrappleLineEntity(world, player, player.getPos().distanceTo(result.getPos())+1.5, boostModifier, result);
 					world.spawnEntity(entity);
-					WAGrappleMod.GRAPPLE_COMPONENT.get(player).setLineId(entity.getEntityId());
+					WAGrappleMod.GRAPPLE_COMPONENT.get(player).setLineId(entity.getId());
 					WAGrappleMod.GRAPPLE_COMPONENT.get(player).setGrappled(true);
 					WAGrappleMod.GRAPPLE_COMPONENT.get(player).sync();
 				}
@@ -99,18 +99,18 @@ public class GrappleItem extends Item{
 	public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
 		//TranslatableText tooltipText = new TranslatableText("item.wagrapple.grapple.tooltip");
 		String text = I18n.translate("item.wagrapple.grapple.tooltip",
-				MinecraftClient.getInstance().options.keySneak.getLocalizedName(),
-				MinecraftClient.getInstance().options.keySprint.getLocalizedName(),
-				MinecraftClient.getInstance().options.keyJump.getLocalizedName());
+				MinecraftClient.getInstance().options.keySneak.getBoundKeyLocalizedText(),
+				MinecraftClient.getInstance().options.keySprint.getBoundKeyLocalizedText(),
+				MinecraftClient.getInstance().options.keyJump.getBoundKeyLocalizedText());
 		for(String line : text.split("\n")) {
 			tooltip.add(new LiteralText(line));
 		}
 	}
 	
-	public int getLengthEnchantmentMultiplier(ListTag listTag) {
+	public int getLengthEnchantmentMultiplier(NbtList listTag) {
 		int result = 1;
-		CompoundTag ctag = (CompoundTag)listTag.stream().filter(tag -> {
-			return ((CompoundTag)tag).getString("id").equalsIgnoreCase(WAGrappleMod.LINE_LENGTH_ENCHANTMENT_ID.toString());
+		NbtCompound ctag = (NbtCompound)listTag.stream().filter(tag -> {
+			return ((NbtCompound)tag).getString("id").equalsIgnoreCase(WAGrappleMod.LINE_LENGTH_ENCHANTMENT_ID.toString());
 		}).findFirst().orElse(null);
 		if(ctag!=null) {
 			result = result * ctag.getShort("lvl")*5;
@@ -118,10 +118,10 @@ public class GrappleItem extends Item{
 		return result;
 	}
 	
-	public double getBoostEnchantmentMultiplier(ListTag listTag) {
+	public double getBoostEnchantmentMultiplier(NbtList listTag) {
 		double result = 1;
-		CompoundTag ctag = (CompoundTag)listTag.stream().filter(tag -> {
-			return ((CompoundTag)tag).getString("id").equalsIgnoreCase(WAGrappleMod.BOOST_POWER_ENCHANTMENT_ID.toString());
+		NbtCompound ctag = (NbtCompound)listTag.stream().filter(tag -> {
+			return ((NbtCompound)tag).getString("id").equalsIgnoreCase(WAGrappleMod.BOOST_POWER_ENCHANTMENT_ID.toString());
 		}).findFirst().orElse(null);
 		if(ctag!=null) {
 			result = result + ctag.getShort("lvl")*0.5;

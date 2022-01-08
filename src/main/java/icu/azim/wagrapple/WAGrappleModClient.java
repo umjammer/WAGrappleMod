@@ -33,7 +33,7 @@ import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.options.KeyBinding;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.model.UnbakedModel;
 import net.minecraft.client.util.ModelIdentifier;
 import net.minecraft.entity.Entity;
@@ -94,7 +94,7 @@ public class WAGrappleModClient implements ClientModInitializer {
 				}
 				PlayerEntity player = (PlayerEntity)e;
 				GrappleLineEntity toSpawn = new GrappleLineEntity(MinecraftClient.getInstance().world, player, length, boost, res);
-				toSpawn.setEntityId(entityId);
+				toSpawn.setId(entityId);
 				toSpawn.setUuid(entityUUID);
 				MinecraftClient.getInstance().world.addEntity(entityId, toSpawn);
 			});

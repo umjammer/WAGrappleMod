@@ -8,7 +8,7 @@ import net.minecraft.item.ItemStack;
 
 public class RopeLengthEnchantment extends Enchantment{
 
-	public RopeLengthEnchantment(Weight weight, EnchantmentTarget type, EquipmentSlot[] slotTypes) {
+	public RopeLengthEnchantment(Rarity weight, EnchantmentTarget type, EquipmentSlot[] slotTypes) {
 		super(weight, type, slotTypes);
 	}
 	
@@ -18,17 +18,17 @@ public class RopeLengthEnchantment extends Enchantment{
 	}
 	
 	@Override
-	public int getMinimumPower(int level) {
+	public int getMinPower(int level) {
 		return level*11;
 	}
 	
 	@Override
-	public int getMaximumPower(int level) {
-		return getMinimumPower(level)+20;
+	public int getMaxPower(int level) {
+		return getMinPower(level)+20;
 	}
 	
 	@Override
-	public int getMaximumLevel() {
+	public int getMaxLevel() {
 		return 3;
 	}
 }

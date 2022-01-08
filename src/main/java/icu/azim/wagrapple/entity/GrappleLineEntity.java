@@ -18,19 +18,19 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.Packet;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Arm;
-import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult.Type;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RayTraceContext;
+import net.minecraft.world.RaycastContext;
+import net.minecraft.world.RaycastContext.FluidHandling;
+import net.minecraft.world.RaycastContext.ShapeType;
 import net.minecraft.world.World;
-import net.minecraft.world.RayTraceContext.FluidHandling;
-import net.minecraft.world.RayTraceContext.ShapeType;
 
 public class GrappleLineEntity extends Entity {
 	
@@ -68,7 +68,7 @@ public class GrappleLineEntity extends Entity {
 		initialResult = res;
 		this.boostSpeed=boostSpeed;
 		Vec3d pos = res.getPos();
-		this.updatePosition(pos.x, pos.y, pos.z);
+		this.setPosition(pos.x, pos.y, pos.z);
         this.updateTrackedPosition(pos.x, pos.y, pos.z);
 		this.player = player;
 		lineHandler= new GrappleLineHandler(this, length);
@@ -84,7 +84,7 @@ public class GrappleLineEntity extends Entity {
 	
 	public static void handleSyncPacket(PacketContext context, PacketByteBuf data) {
 //
-		CompoundTag tag = data.readCompoundTag();
+		NbtCompound tag = data.readNbt();
 		int id = tag.getInt("eid");
 		if(context.getPacketEnvironment()==EnvType.CLIENT) {
 			context.getTaskQueue().execute(()->{
@@ -94,7 +94,7 @@ public class GrappleLineEntity extends Entity {
 					return;
 				}
 				GrappleLineEntity line = (GrappleLineEntity)e;
-				line.readCustomDataFromTag(tag);
+				line.readCustomDataFromNbt(tag);
 			});
 		}else {
 			context.getTaskQueue().execute(()->{
@@ -115,13 +115,13 @@ public class GrappleLineEntity extends Entity {
 			return;
 		}
 		PacketByteBuf passedData = new PacketByteBuf(Unpooled.buffer());
-		CompoundTag data = new CompoundTag();
-		this.writeCustomDataToTag(data);
-		passedData.writeCompoundTag(data);
+		NbtCompound data = new NbtCompound();
+		this.writeCustomDataToNbt(data);
+		passedData.writeNbt(data);
 		ClientSidePacketRegistry.INSTANCE.sendToServer(WAGrappleMod.UPDATE_LINE_PACKET_ID, passedData);
 	}
 	
-	private void echoEntityDataToClients(CompoundTag tag) {
+	private void echoEntityDataToClients(NbtCompound tag) {
 		if(world.isClient) {
 			System.out.println("attempted to sync from wrong side (expected server, got client)");
 			return;
@@ -129,15 +129,15 @@ public class GrappleLineEntity extends Entity {
 		Stream<PlayerEntity> watchingPlayers = Stream.concat(PlayerStream.watching(this),PlayerStream.watching(this.getPlayer())).distinct().filter(player->player!=this.getPlayer());
 		
 		PacketByteBuf passedData = new PacketByteBuf(Unpooled.buffer());
-		passedData.writeCompoundTag(tag);
+		passedData.writeNbt(tag);
 		watchingPlayers.forEach(player->ServerSidePacketRegistry.INSTANCE.sendToPlayer(player, WAGrappleMod.UPDATE_LINE_PACKET_ID, passedData));
 	}
 
 	@Override
 	public Packet<?> createSpawnPacket() {
         PacketByteBuf data = new PacketByteBuf(Unpooled.buffer());
-        data.writeInt(this.getEntityId());
-        data.writeInt(this.player.getEntityId());
+        data.writeInt(this.getId());
+        data.writeInt(this.player.getId());
         data.writeDouble(lineHandler.getMaxLen());
         data.writeDouble(boostSpeed);
         data.writeUuid(this.getUuid());
@@ -152,26 +152,18 @@ public class GrappleLineEntity extends Entity {
 	@Override
 	public void tick() {
 		if(player==null||!player.isAlive()) {
-			this.remove();
+			this.remove(getRemovalReason());
 			return;
 		}
 		if(!ticked) {
 			ticked = true;
-		}
-		if(!checked&&age>10) {
-			if(lineHandler.performCheck()) {
-				checked = true;
-			}else {
-				this.destroyLine();
-				return;
-			}
 		}
 		if(world.isClient) {
 			if(boostCooldown>0) boostCooldown--;
 			if(debugc>0) debugc--;
 
 			lineHandler.tick();
-			if(this.removed) {
+			if(this.isRemoved()) {
 				return;
 			}
 
@@ -186,21 +178,21 @@ public class GrappleLineEntity extends Entity {
 				}
 			}
 			handlePlayerInput(hand);
-			if(this.removed) {
+			if(this.isRemoved()) {
 				return;
 			}
 			grapplePhysicsTick(hand);
-			if(this.removed) {
+			if(this.isRemoved()) {
 				return;
 			}
 			movementPhysicsTick(hand);
-			if(this.removed) {
+			if(this.isRemoved()) {
 				return;
 			}
 			
 		}else {
 			if(!WAGrappleMod.GRAPPLE_COMPONENT.get(player).isGrappled()) {
-				this.remove();
+				this.remove(getRemovalReason());
 			}
 		}
 		
@@ -250,7 +242,7 @@ public class GrappleLineEntity extends Entity {
 	
 	public void grapplePhysicsTick(int hand) {
 		
-		BlockHitResult res = this.world.rayTrace(new RayTraceContext(Util.getPlayerShoulder(player, hand, 1),lineHandler.getPiecePos(lineHandler.size()-1), ShapeType.COLLIDER, FluidHandling.NONE, player));
+		BlockHitResult res = this.world.raycast(new RaycastContext(Util.getPlayerShoulder(player, hand, 1),lineHandler.getPiecePos(lineHandler.size()-1), ShapeType.COLLIDER, FluidHandling.NONE, player));
 		
 		if(res.getType()==Type.BLOCK) {
 			lineHandler.add(res);
@@ -314,7 +306,7 @@ public class GrappleLineEntity extends Entity {
 			passedData.writeBoolean(true);
 			ClientSidePacketRegistry.INSTANCE.sendToServer(WAGrappleMod.DETACH_LINE_PACKET_ID, passedData);
 		}
-		this.remove();
+		this.remove(getRemovalReason());
 	}
 	
 	public void detachLine() {
@@ -326,7 +318,7 @@ public class GrappleLineEntity extends Entity {
 			passedData.writeBoolean(true);
 			ClientSidePacketRegistry.INSTANCE.sendToServer(WAGrappleMod.DETACH_LINE_PACKET_ID, passedData);
 		}
-		this.remove();
+		this.remove(getRemovalReason());
 	}
 	
 	private Vec3d project(Vec3d a, Vec3d b) {
@@ -370,7 +362,7 @@ public class GrappleLineEntity extends Entity {
 	}
 
 	@Override //unused methods
-	protected void readCustomDataFromTag(CompoundTag tag) {
+	protected void readCustomDataFromNbt(NbtCompound tag) {
 		if(ticked) {
 			Vec3d pos = Util.readVec3d(tag, "pos");
 			this.setPos(pos.x, pos.y, pos.z);
@@ -378,8 +370,8 @@ public class GrappleLineEntity extends Entity {
 		}
 	}
 	@Override
-	protected void writeCustomDataToTag(CompoundTag tag) {
-		tag.putInt("eid", this.getEntityId());
+	protected void writeCustomDataToNbt(NbtCompound tag) {
+		tag.putInt("eid", this.getId());
 		tag.putDouble("maxLen", lineHandler.getMaxLen());
 		tag.putInt("pieces", lineHandler.size());
 		Util.writeVec3d(tag, "pos", this.getPos());

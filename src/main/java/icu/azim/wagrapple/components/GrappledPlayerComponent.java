@@ -5,7 +5,7 @@ import nerdhub.cardinal.components.api.ComponentType;
 import nerdhub.cardinal.components.api.util.sync.EntitySyncedComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 
 public class GrappledPlayerComponent implements EntitySyncedComponent{
 	private boolean grappled = false;
@@ -18,13 +18,13 @@ public class GrappledPlayerComponent implements EntitySyncedComponent{
 	
 	
 	@Override
-	public void fromTag(CompoundTag tag) {
+	public void fromTag(NbtCompound tag) {
 		grappled = tag.getBoolean("grappled");
 		lineId = tag.getInt("lineid");
 	}
 
 	@Override
-	public CompoundTag toTag(CompoundTag tag) {
+	public NbtCompound toTag(NbtCompound tag) {
 		tag.putBoolean("grappled", grappled);
 		tag.putInt("lineid", lineId);
 		return tag;

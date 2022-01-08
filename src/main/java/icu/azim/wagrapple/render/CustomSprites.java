@@ -13,7 +13,7 @@ public class CustomSprites {
 		@Deprecated
 	    public static void init() {
 	        ClientSpriteRegistryCallback
-	                .event(SpriteAtlasTexture.BLOCK_ATLAS_TEX)
+	                .event(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE)
 	                .register(CustomSprites::registerSprites);
 	    }
 
@@ -21,7 +21,7 @@ public class CustomSprites {
 	    	if(id.equals(WAGrappleMod.DUNGEON_BLOCK_ID)) {
 	    		
 	    	}
-	    	Sprite sprite = MinecraftClient.getInstance().getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEX).apply(id);
+	    	Sprite sprite = MinecraftClient.getInstance().getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).apply(id);
 	    	
 	    	
 	        return sprite;

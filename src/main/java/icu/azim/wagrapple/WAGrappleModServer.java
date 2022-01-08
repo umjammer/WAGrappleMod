@@ -18,7 +18,7 @@ public class WAGrappleModServer implements net.fabricmc.api.DedicatedServerModIn
             		if(id>0) {
         				Entity e = player.world.getEntityById(id);
         				if(e!=null) {
-        					e.remove();
+        					e.remove(g);
         				}
             		}
             		WAGrappleMod.GRAPPLE_COMPONENT.get(player).setLineId(-1);
