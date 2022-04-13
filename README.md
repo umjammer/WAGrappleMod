@@ -11,11 +11,18 @@ This is an attempted port to 1.18.2. ([original](https://github.com/Azim/WAGrapp
 It works somehow! \
 Take over and complete it because I'm a programmer w/o 3d knowledge.
 
+## Warning
+
+<details><summary>Conflicts with Optifine</summary><p>
+  More like Opti<strong>Bad</strong></p></details>
+
 ## Requires
 
- * fabric
- * fabric-api.
  * MC version 1.18.2
+ * fabric
+ * [fabric-api-0.48.0+1.18.2](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+ * [cardinal-components-api-4.1.4](https://www.curseforge.com/minecraft/mc-mods/cardinal-components)
+ * [arrp-0.1.1](https://www.curseforge.com/minecraft/mc-mods/arrp)
 
 ## TODO
 
