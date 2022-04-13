@@ -8,27 +8,27 @@ import net.minecraft.item.ItemStack;
 
 public class RopeLengthEnchantment extends Enchantment{
 
-	public RopeLengthEnchantment(Rarity weight, EnchantmentTarget type, EquipmentSlot[] slotTypes) {
-		super(weight, type, slotTypes);
-	}
-	
-	@Override
-	public boolean isAcceptableItem(ItemStack stack) {
-		return stack.getItem() instanceof GrappleItem;
-	}
-	
-	@Override
-	public int getMinPower(int level) {
-		return level*11;
-	}
-	
-	@Override
-	public int getMaxPower(int level) {
-		return getMinPower(level)+20;
-	}
-	
-	@Override
-	public int getMaxLevel() {
-		return 3;
-	}
+    public RopeLengthEnchantment(Rarity weight, EnchantmentTarget type, EquipmentSlot[] slotTypes) {
+        super(weight, type, slotTypes);
+    }
+    
+    @Override
+    public boolean isAcceptableItem(ItemStack stack) {
+        return stack.getItem() instanceof GrappleItem;
+    }
+    
+    @Override
+    public int getMinPower(int level) {
+        return level*11;
+    }
+    
+    @Override
+    public int getMaxPower(int level) {
+        return getMinPower(level)+20;
+    }
+    
+    @Override
+    public int getMaxLevel() {
+        return 3;
+    }
 }

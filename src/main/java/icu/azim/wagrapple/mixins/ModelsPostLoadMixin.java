@@ -25,6 +25,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.render.model.ModelLoader;
 import net.minecraft.client.render.model.UnbakedModel;
 import net.minecraft.client.render.model.json.ModelVariantMap;
+import net.minecraft.client.util.ModelIdentifier;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.state.StateManager;
 import net.minecraft.util.Identifier;
@@ -32,7 +33,7 @@ import net.minecraft.util.Identifier;
 
 @Mixin(ModelLoader.class)
 public class ModelsPostLoadMixin {
-	@Shadow @Final private Map<Identifier, UnbakedModel> unbakedModels;
+    @Shadow @Final private Map<Identifier, UnbakedModel> unbakedModels;
 
     @Shadow @Final private ResourceManager resourceManager;
 
@@ -46,16 +47,16 @@ public class ModelsPostLoadMixin {
     }
 
     @SuppressWarnings("rawtypes")
-	@Inject(
+    @Inject(
         method = "loadModel(Lnet/minecraft/util/Identifier;)V",
         at = @At(value = "INVOKE", target = "Ljava/util/Map;putAll(Ljava/util/Map;)V", shift = Shift.BEFORE),
         locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void loadModel(Identifier id, CallbackInfo ci, Identifier identifier2, StateManager stateManager,
-                           List list, ImmutableList immutableList, Map map, Map map2, Identifier identifier3,
+    private void loadModel(Identifier id, CallbackInfo ci, ModelIdentifier mi, Identifier identifier2, StateManager stateManager,
+                           List list, ImmutableList immutableList, Map map, Map<BlockState, Pair<UnbakedModel, Supplier<ModelDefinitionExt>>> map2, Identifier identifier3,
                            UnbakedModel unbakedModel, @Coerce Object modelDefinition, Pair pair, List list3, Iterator var14,
-                           Pair pair2, ModelVariantMap modelVariantMap, Map<BlockState, Pair<UnbakedModel, Supplier<ModelDefinitionExt>>> map4) {
-        map4.keySet().forEach(k -> map4.computeIfPresent(k, (state, entry) -> {
+                           Pair pair2, ModelVariantMap modelVariantMap) {
+        map2.keySet().forEach(k -> map2.computeIfPresent(k, (state, entry) -> {
             UnbakedModel model = getModelWrapper().apply(state, entry.getFirst());
             return Pair.of(model, entry.getSecond());
         }));

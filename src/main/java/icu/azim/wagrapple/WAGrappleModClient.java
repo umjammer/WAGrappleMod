@@ -27,8 +27,8 @@ import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
 import net.fabricmc.fabric.api.client.model.ModelProviderContext;
 import net.fabricmc.fabric.api.client.model.ModelProviderException;
 import net.fabricmc.fabric.api.client.model.ModelVariantProvider;
-import net.fabricmc.fabric.api.client.rendereregistry.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.block.BlockState;
@@ -47,182 +47,184 @@ import net.minecraft.util.profiler.Profiler;
 @SuppressWarnings("unused")
 public class WAGrappleModClient implements ClientModInitializer {
 
-	private static KeyBinding ascend;
-	private static KeyBinding descend;
-	private static KeyBinding boost;
+    private static KeyBinding ascend;
+    private static KeyBinding descend;
+    private static KeyBinding boost;
 
 
-	public static final RuntimeResourcePack RESOURCE_PACK = RuntimeResourcePack.create(WAGrappleMod.modid+":rpack");
+    public static final RuntimeResourcePack RESOURCE_PACK = RuntimeResourcePack.create(WAGrappleMod.modid + ":rpack");
 
-	public static KeyBinding getAscend() {
-		if(ascend==null) ascend =  MinecraftClient.getInstance().options.keySneak;
-		return ascend;
-	}
-	public static KeyBinding getDescend() {
-		if(descend==null) descend = MinecraftClient.getInstance().options.keySprint;
-		return descend;
-	}
-	public static KeyBinding getBoost() {
-		if(boost==null) boost = MinecraftClient.getInstance().options.keyJump;
-		return boost;
-	}
-	public static KeyBinding getDebug() {
-		if(debug==null) debug = MinecraftClient.getInstance().options.keySwapHands;
-		return debug;
-	}
-	private static KeyBinding debug;
+    public static KeyBinding getAscend() {
+        if (ascend == null) ascend =  MinecraftClient.getInstance().options.sneakKey;
+        return ascend;
+    }
 
-	@Override
-	public void onInitializeClient() {
-		EntityRendererRegistry.INSTANCE.register(WAGrappleMod.GRAPPLE_LINE, (entityRenderDispatcher, context) -> new GrappleLineRenderer(entityRenderDispatcher));
-		ClientSidePacketRegistry.INSTANCE.register(WAGrappleMod.UPDATE_LINE_PACKET_ID, (context, data)->GrappleLineEntity.handleSyncPacket(context, data));
-		ClientSidePacketRegistry.INSTANCE.register(WAGrappleMod.UPDATE_LINE_LENGTH_PACKET_ID, (context, data) ->{
-			WAGrappleMod.maxLength = data.readDouble();
-		});
-		ClientSidePacketRegistry.INSTANCE.register(WAGrappleMod.CREATE_LINE_PACKET_ID, (context, packet) -> {
+    public static KeyBinding getDescend() {
+        if (descend == null) descend = MinecraftClient.getInstance().options.sprintKey;
+        return descend;
+    }
 
-			int entityId = packet.readInt();
-			int ownerId = packet.readInt();
-			double length = packet.readDouble();
-			double boost = packet.readDouble();
-			UUID entityUUID = packet.readUuid();
-			BlockHitResult res = packet.readBlockHitResult();
-			context.getTaskQueue().execute(() -> {
-				Entity e = MinecraftClient.getInstance().world.getEntityById(ownerId);
-				if(!(e instanceof PlayerEntity)) {
-					return;
-				}
-				PlayerEntity player = (PlayerEntity)e;
-				GrappleLineEntity toSpawn = new GrappleLineEntity(MinecraftClient.getInstance().world, player, length, boost, res);
-				toSpawn.setId(entityId);
-				toSpawn.setUuid(entityUUID);
-				MinecraftClient.getInstance().world.addEntity(entityId, toSpawn);
-			});
-		});
-		
-		/*
-		ModelLoadingRegistry.INSTANCE.registerVariantProvider(manager -> {
-			return new ModelVariantProvider() {
-				@Override
-				public UnbakedModel loadModelVariant(ModelIdentifier modelId, ModelProviderContext context) throws ModelProviderException {
-					
-					return modelId.getNamespace().equals(WAGrappleMod.modid) && modelId.getPath().equals("dungeon_block")
-							?
-									DungeonBlockModel.INSTANCE(context.loadModel(modelId))
-									:null;
-				}
-			};
-		});
-		*/
-		ModelWrapperHandler.INSTANCE.register(manager->(state,model)->{
-			if(state.getBlock() instanceof DungeonBlock) {
-				return new DungeonBlockModel(model);
-			}else {
-				return model;
-			}
-		});
-		
-		
-		RRPCallback.EVENT.register(a -> {
-			a.add(0, RESOURCE_PACK);
-		});
-		
-		ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new IdentifiableResourceReloadListener(){
-			private final Identifier identifier = new Identifier(WAGrappleMod.modid, "rrp");
+    public static KeyBinding getBoost() {
+        if (boost == null) boost = MinecraftClient.getInstance().options.jumpKey;
+        return boost;
+    }
 
-			@Override
-			public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Profiler prepareProfiler, Profiler applyProfiler, Executor prepareExecutor, Executor applyExecutor){
+    public static KeyBinding getDebug() {
+        if (debug == null) debug = MinecraftClient.getInstance().options.swapHandsKey;
+        return debug;
+    }
 
-				return CompletableFuture.supplyAsync(()->{
-					try {
-						generateDungeonBlockPattern(manager);
-						System.out.println("generated dungeon block");
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					return null;
-				}, applyExecutor).thenCompose((v)->synchronizer.whenPrepared(null));
-			}
-			@Override
-			public Identifier getFabricId(){
-				return identifier;
-			}
-		});
-		
-		try {
-			generateDungeonBlockPattern(null);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		//CustomSprites.init();
-		
-		
-		System.out.println("client init done");
-	}
-	
-	
-	public InputStream getImageResource(ResourceManager manager, String resource) throws IOException {
-		if(manager==null) {
-			resource = "assets/wagrapple/"+resource;
-			return WAGrappleMod.class.getClassLoader().getResourceAsStream(resource);
-		}else {
-			return manager.getResource(new Identifier("wagrapple", resource)).getInputStream();
-		}
-	}
-	
-	public void generateDungeonBlockPattern(ResourceManager manager) throws IOException {
-		for(int x = 0; x<6; x++) {
-			BufferedImage sheet = ImageIO.read(getImageResource(manager, "textures/block/test_x"+x+".png"));
-			for(int iy = 0; iy<6; iy++) {
-				for(int ix = 0; ix<6; ix++) {
-					//north.add();
-					RESOURCE_PACK.addTexture(new Identifier("wagrapple","block/north_"+(5-x)+"_"+(5-iy)+"_"+(5-ix)), sheet.getSubimage(ix*16, iy*16, 16, 16));
-				}
-			}
-		}
-		for(int y = 0; y<6; y++) {
-			BufferedImage sheet = ImageIO.read(getImageResource(manager, "textures/block/test_y"+y+".png"));
-			for(int iy = 0; iy<6; iy++) {
-				for(int ix = 0; ix<6; ix++) {
-					RESOURCE_PACK.addTexture(new Identifier("wagrapple","block/up_"+ix+"_"+y+"_"+iy), sheet.getSubimage(ix*16, iy*16, 16, 16));
-				}
-			}
-		}
-		for(int z = 0; z<6; z++) {
-			BufferedImage sheet = ImageIO.read(getImageResource(manager, "textures/block/test_z"+z+".png"));
-			for(int iy = 0; iy<6; iy++) {
-				for(int ix = 0; ix<6; ix++) {
-					RESOURCE_PACK.addTexture(new Identifier("wagrapple","block/east_"+(5-iy)+"_"+(5-ix)+"_"+z), sheet.getSubimage(ix*16, iy*16, 16, 16));
-				}
-			}
-		}
-		for(int x = 0; x<6;x++) {
-			for(int y = 0; y<6; y++) {
-				for(int z = 0; z<6; z++) {
-					JModel model = JModel.model("wagrapple:block/dungeon_block");
-					JTextures textures = JModel.textures()
-							.var("up", "wagrapple:block/up_"+x+"_"+y+"_"+z)
-							.var("down", "wagrapple:block/up_"+x+"_"+(y+5)%6+"_"+z)
-							.var("south", "wagrapple:block/north_"+z+"_"+y+"_"+x)
-							.var("north", "wagrapple:block/north_"+(z+5)%6+"_"+y+"_"+x)
-							.var("west", "wagrapple:block/east_"+y+"_"+z+"_"+(x+5)%6)
-							.var("east", "wagrapple:block/east_"+y+"_"+z+"_"+x)
-							.var("particle", "#up")
-							;
-					model.textures(textures);
-					RESOURCE_PACK.addModel(model, new Identifier("wagrapple","block/dungeon_block_"+(x+6*y+6*6*z)));
-				}
-			}
-		}
-		JState state = JState.state();
-		JVariant variant = JState.variant();
-		for(int i = 0; i < 216; i++) {
-			variant.put("dungeon", i, JState.model("wagrapple:block/dungeon_block_"+i));
-		}
-		state.add(variant);
+    private static KeyBinding debug;
 
-		RESOURCE_PACK.addBlockState(state, new Identifier("wagrapple","dungeon_block"));
-	}
+    @Override
+    public void onInitializeClient() {
+        EntityRendererRegistry.register(WAGrappleMod.GRAPPLE_LINE, GrappleLineRenderer::new);
+        ClientPlayNetworking.registerGlobalReceiver(WAGrappleMod.UPDATE_LINE_PACKET_ID, (client, handler, buf, responseSender) -> GrappleLineEntity.handleSyncPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(WAGrappleMod.UPDATE_LINE_LENGTH_PACKET_ID, (client, handler, data, responseSender) -> {
+            WAGrappleMod.maxLength = data.readDouble();
+        });
+        ClientPlayNetworking.registerGlobalReceiver(WAGrappleMod.CREATE_LINE_PACKET_ID, (client, handler, packet, responseSender) -> {
+
+            int entityId = packet.readInt();
+            int ownerId = packet.readInt();
+            double length = packet.readDouble();
+            double boost = packet.readDouble();
+            UUID entityUUID = packet.readUuid();
+            BlockHitResult res = packet.readBlockHitResult();
+            client.execute(() -> {
+                Entity e = client.world.getEntityById(ownerId);
+                if(!(e instanceof PlayerEntity)) {
+                    return;
+                }
+                PlayerEntity player = (PlayerEntity)e;
+                GrappleLineEntity toSpawn = new GrappleLineEntity(client.world, player, length, boost, res);
+                toSpawn.setId(entityId);
+                toSpawn.setUuid(entityUUID);
+                client.world.addEntity(entityId, toSpawn);
+            });
+        });
+
+        /*
+        ModelLoadingRegistry.INSTANCE.registerVariantProvider(manager -> {
+            return new ModelVariantProvider() {
+                @Override
+                public UnbakedModel loadModelVariant(ModelIdentifier modelId, ModelProviderContext context) throws ModelProviderException {
+
+                    return modelId.getNamespace().equals(WAGrappleMod.modid) && modelId.getPath().equals("dungeon_block")
+                            ?
+                                    DungeonBlockModel.INSTANCE(context.loadModel(modelId))
+                                    :null;
+                }
+            };
+        });
+        */
+        ModelWrapperHandler.INSTANCE.register(manager -> (state, model) -> {
+            if (state.getBlock() instanceof DungeonBlock) {
+                return new DungeonBlockModel(model);
+            } else {
+                return model;
+            }
+        });
 
 
+        RRPCallback.BEFORE_VANILLA.register(a -> {
+            a.add(0, RESOURCE_PACK);
+        });
+
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new IdentifiableResourceReloadListener(){
+            private final Identifier identifier = new Identifier(WAGrappleMod.modid, "rrp");
+
+            @Override
+            public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Profiler prepareProfiler, Profiler applyProfiler, Executor prepareExecutor, Executor applyExecutor){
+
+                return CompletableFuture.supplyAsync(() -> {
+                    try {
+                        generateDungeonBlockPattern(manager);
+                        System.out.println("generated dungeon block");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                }, applyExecutor).thenCompose(v -> synchronizer.whenPrepared(null));
+            }
+            @Override
+            public Identifier getFabricId(){
+                return identifier;
+            }
+        });
+
+        try {
+            generateDungeonBlockPattern(null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        CustomSprites.init();
+
+
+        System.out.println("client init done");
+    }
+
+
+    public InputStream getImageResource(ResourceManager manager, String resource) throws IOException {
+        if (manager == null) {
+            resource = "assets/wagrapple/"+resource;
+            return WAGrappleMod.class.getClassLoader().getResourceAsStream(resource);
+        } else {
+            return manager.getResource(new Identifier("wagrapple", resource)).getInputStream();
+        }
+    }
+
+    public void generateDungeonBlockPattern(ResourceManager manager) throws IOException {
+        for(int x = 0; x < 6; x++) {
+            BufferedImage sheet = ImageIO.read(getImageResource(manager, "textures/block/test_x" + x + ".png"));
+            for(int iy = 0; iy < 6; iy++) {
+                for(int ix = 0; ix < 6; ix++) {
+                    //north.add();
+                    RESOURCE_PACK.addTexture(new Identifier("wagrapple","block/north_" + (5 - x) + "_" + (5 - iy) + "_" + (5 - ix)), sheet.getSubimage(ix * 16, iy * 16, 16, 16));
+                }
+            }
+        }
+        for(int y = 0; y < 6; y++) {
+            BufferedImage sheet = ImageIO.read(getImageResource(manager, "textures/block/test_y" + y + ".png"));
+            for(int iy = 0; iy < 6; iy++) {
+                for(int ix = 0; ix < 6; ix++) {
+                    RESOURCE_PACK.addTexture(new Identifier("wagrapple", "block/up_" + ix + "_" + y + "_" + iy), sheet.getSubimage(ix * 16, iy * 16, 16, 16));
+                }
+            }
+        }
+        for(int z = 0; z < 6; z++) {
+            BufferedImage sheet = ImageIO.read(getImageResource(manager, "textures/block/test_z" + z + ".png"));
+            for (int iy = 0; iy < 6; iy++) {
+                for (int ix = 0; ix < 6; ix++) {
+                    RESOURCE_PACK.addTexture(new Identifier("wagrapple","block/east_"+ (5 - iy) + "_" + (5 - ix) + "_" + z), sheet.getSubimage(ix * 16, iy * 16, 16, 16));
+                }
+            }
+        }
+        for (int x = 0; x < 6;x++) {
+            for (int y = 0; y < 6; y++) {
+                for (int z = 0; z < 6; z++) {
+                    JModel model = JModel.model("wagrapple:block/dungeon_block");
+                    JTextures textures = JModel.textures()
+                            .var("up", "wagrapple:block/up_" + x + "_" + y + "_" + z)
+                            .var("down", "wagrapple:block/up_" + x + "_" + (y + 5) % 6 + "_" + z)
+                            .var("south", "wagrapple:block/north_" + z + "_" + y + "_" + x)
+                            .var("north", "wagrapple:block/north_" + (z + 5) % 6 + "_" + y + "_" + x)
+                            .var("west", "wagrapple:block/east_" + y + "_" + z + "_" + (x + 5) % 6)
+                            .var("east", "wagrapple:block/east_" + y + "_" + z + "_" + x)
+                            .var("particle", "#up")
+                            ;
+                    model.textures(textures);
+                    RESOURCE_PACK.addModel(model, new Identifier("wagrapple","block/dungeon_block_" + (x + 6 * y + 6 * 6 * z)));
+                }
+            }
+        }
+        JState state = JState.state();
+        JVariant variant = JState.variant();
+        for (int i = 0; i < 216; i++) {
+            variant.put("dungeon", i, JState.model("wagrapple:block/dungeon_block_" + i));
+        }
+        state.add(variant);
+
+        RESOURCE_PACK.addBlockState(state, new Identifier("wagrapple","dungeon_block"));
+    }
 }

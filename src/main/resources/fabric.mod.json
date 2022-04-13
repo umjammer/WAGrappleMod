@@ -6,7 +6,7 @@
   "name": "WAGrapple mod",
   "description": "Adds a WA-like grapple",
   "authors": [
-    "Azim, Quickburst"
+    "Azim, Quickburst", "Umjammer"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
@@ -30,10 +30,22 @@
   ],
 
   "depends": {
-    "fabricloader": ">=0.12.12",
+    "fabricloader": ">=0.13.3",
     "fabric": "*",
-    "minecraft": "1.16.x"
+    "minecraft": "1.18.x",
+    "java": ">=17"
   },
+  "entrypoints": {
+    "cardinal-components": [
+      "icu.azim.wagrapple.components.GrappledPlayerComponent"
+    ]
+  },
+  "custom": {
+    "cardinal-components": [
+      "wagrapple:grapple_component"
+    ]
+  },
+  "accessWidener" : "wagrapple.accesswidener",
   "suggests": {
     "flamingo": "*"
   }

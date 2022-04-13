@@ -1,69 +1,63 @@
 package icu.azim.wagrapple.components;
 
+import dev.onyxstudios.cca.api.v3.component.sync.AutoSyncedComponent;
+import dev.onyxstudios.cca.api.v3.entity.EntityComponentFactoryRegistry;
+import dev.onyxstudios.cca.api.v3.entity.EntityComponentInitializer;
+import dev.onyxstudios.cca.api.v3.entity.RespawnCopyStrategy;
 import icu.azim.wagrapple.WAGrappleMod;
-import nerdhub.cardinal.components.api.ComponentType;
-import nerdhub.cardinal.components.api.util.sync.EntitySyncedComponent;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 
-public class GrappledPlayerComponent implements EntitySyncedComponent{
-	private boolean grappled = false;
-	private int lineId = -1;
-	private PlayerEntity owner;
-	
-	public GrappledPlayerComponent(PlayerEntity owner) {
-		this.owner = owner;
-	}
-	
-	
-	@Override
-	public void fromTag(NbtCompound tag) {
-		grappled = tag.getBoolean("grappled");
-		lineId = tag.getInt("lineid");
-	}
+public class GrappledPlayerComponent implements AutoSyncedComponent, EntityComponentInitializer {
+    private boolean grappled = false;
+    private int lineId = -1;
+    @SuppressWarnings("unused")
+    private PlayerEntity owner;
 
-	@Override
-	public NbtCompound toTag(NbtCompound tag) {
-		tag.putBoolean("grappled", grappled);
-		tag.putInt("lineid", lineId);
-		return tag;
-	}
+    public GrappledPlayerComponent() {
+    }
 
+    public GrappledPlayerComponent(PlayerEntity owner) {
+        this.owner = owner;
+    }
 
-	public boolean isGrappled() {
-		return grappled;
-	}
+    @Override
+    public void writeToNbt(NbtCompound tag) {
+        grappled = tag.getBoolean("grappled");
+        lineId = tag.getInt("lineid");
+    }
 
+    @Override
+    public void readFromNbt(NbtCompound tag) {
+        tag.putBoolean("grappled", grappled);
+        tag.putInt("lineid", lineId);
+    }
 
-	public void setGrappled(boolean b) {
-		grappled = b;
-	}
+    public boolean isGrappled() {
+        return grappled;
+    }
 
 
-	public int getLineId() {
-		return lineId;
-	}
-
-	public void setLineId(int id) {
-		lineId = id;
-	}
+    public void setGrappled(boolean b) {
+        grappled = b;
+    }
 
 
-	@Override
-	public ComponentType<?> getComponentType() {
-		return WAGrappleMod.GRAPPLE_COMPONENT;
-	}
+    public int getLineId() {
+        return lineId;
+    }
 
+    public void setLineId(int id) {
+        lineId = id;
+    }
 
-	@Override
-	public Entity getEntity() {
-		return owner;
-	}
-	
-	@Override
-	public String toString() {
-		return "grappled: "+grappled+" lineId"+lineId;
-	}
-	
+    @Override
+    public String toString() {
+        return "grappled: " + grappled + " lineId" + lineId;
+    }
+
+    @Override
+    public void registerEntityComponentFactories(EntityComponentFactoryRegistry registry) {
+        registry.registerForPlayers(WAGrappleMod.GRAPPLE_COMPONENT, GrappledPlayerComponent::new, RespawnCopyStrategy.NEVER_COPY);
+    }
 }
